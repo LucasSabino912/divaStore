@@ -41,6 +41,48 @@ export default function App() {
   const [productoSeleccionado, setProductoSeleccionado] = useState(null)
   const [imagenPrincipal, setImagenPrincipal] = useState(null)
   const [colorElegido, setColorElegido] = useState('')
+  const [carritoAbierto, setCarritoAbierto] = useState(false)
+
+  // Le agregamos un ID único a cada ítem del carrito (por si agrega dos lentes iguales pero de distinto color)
+  const agregarAlCarrito = (product, color = null) => {
+    const colorFinal = color || (coloresLimpios.length > 0 ? coloresLimpios[0] : 'Único')
+    
+    const nuevoItem = {
+      ...product,
+      colorSeleccionado: colorFinal,
+      cartId: Date.now() + Math.random() // ID único para el carrito
+    }
+    
+    setCarrito([...carrito, nuevoItem])
+    setCarritoAbierto(true) // Abre el carrito automáticamente para que vea que se agregó
+  }
+
+  const eliminarDelCarrito = (cartId) => {
+    setCarrito(carrito.filter(item => item.cartId !== cartId))
+  }
+
+  // Lógica para armar el texto y copiarlo
+  const generarPedido = () => {
+    if (carrito.length === 0) return
+
+    let total = 0
+    let mensaje = `¡Hola! Quiero hacer un pedido en Diva Store ✨\n\n`
+    
+    carrito.forEach(item => {
+      mensaje += `▪️ 1x ${item.name} (Color: ${item.colorSeleccionado}) - $${Number(item.price).toLocaleString('es-AR')}\n`
+      total += item.price
+    })
+
+    mensaje += `\nTotal: $${total.toLocaleString('es-AR')}\n\n¿Me pasás los datos para abonar?`
+
+    navigator.clipboard.writeText(mensaje)
+      .then(() => {
+        alert("¡Pedido copiado al portapapeles! 📋\n\nTe redirigimos a nuestro Instagram para que pegues el mensaje en el chat.")
+        // Redirige directamente al perfil de Diva Store
+        window.open('https://www.instagram.com/diva_store_ag/', '_blank')
+      })
+      .catch(() => alert("Hubo un error al copiar el texto, intentá de nuevo."))
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -56,13 +98,6 @@ export default function App() {
     }
     fetchData()
   }, [])
-
-  // Agregar al carrito (soporta agregar desde la tarjeta directo o desde el modal con el color elegido)
-  const agregarAlCarrito = (product, color = null) => {
-    const colorFinal = color || (product.colors && product.colors.length > 0 ? product.colors[0] : 'Único')
-    setCarrito([...carrito, { ...product, colorSeleccionado: colorFinal }])
-    alert(`Agregaste: ${product.name} (Color: ${colorFinal})`)
-  }
 
   // Lógica del Modal
   const abrirModal = (prod) => {
@@ -103,19 +138,23 @@ export default function App() {
       {/* NAVBAR */}
       <header className="border-b-2 border-black px-6 py-4 flex justify-between items-center sticky top-0 bg-black text-white z-40">
         <h1 className="text-xl font-extrabold tracking-widest uppercase">Diva Store</h1>
-        <button 
-          onClick={() => alert(`Productos en el carrito: ${carrito.length}`)}
-          className="border-2 border-white px-4 py-2 text-sm font-bold bg-black text-white shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] transition-all cursor-pointer"
-        >
-          Carrito ({carrito.length})
-        </button>
+          <button 
+            onClick={() => setCarritoAbierto(true)}
+            className="border-2 border-white px-4 py-2 text-sm font-bold bg-black text-white shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] transition-all cursor-pointer"
+          >
+            Carrito ({carrito.length})
+          </button>
       </header>
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-6 py-10">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight mb-2">Diva Store</h2>
-          <p className="text-gray-600 text-sm md:text-base">Catálogo exclusivo de accesorios seleccionados.</p>
+        {/* BLOQUE NUEVO CON LOGO */}
+        <div className="flex flex-col items-center justify-center text-center mb-10">
+          <img 
+            src="/logo.jpg" 
+            alt="Diva Store Logo" 
+            className="h-20 sm:h-28 md:h-36 w-auto object-contain mb-3"
+          />
         </div>
 
         {/* BARRA DE FILTROS */}
@@ -283,7 +322,7 @@ export default function App() {
                   {productoSeleccionado.description || 'Este producto no cuenta con descripción detallada.'}
                 </p>
 
-                {/* SELECTOR DE COLORES (Los circulitos mágicos) */}
+                {/* SELECTOR DE COLORES (Diseño Anillo Doble) */}
                 {productoSeleccionado.colors && productoSeleccionado.colors.length > 0 && (
                   <div className="mb-8 p-4 border-2 border-black bg-gray-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                     <p className="text-xs font-black uppercase tracking-wider mb-3">
@@ -301,17 +340,19 @@ export default function App() {
                             type="button"
                             onClick={() => setColorElegido(colorName)}
                             title={colorName}
-                            style={{ backgroundColor: hex }}
-                            className={`w-8 h-8 rounded-full border-2 transition-all cursor-pointer relative ${
+                            className={`w-8 h-8 rounded-full border-2 border-black bg-white p-0.5 flex items-center justify-center transition-all cursor-pointer ${
                               esSeleccionado
-                                ? 'border-black scale-125 shadow-[0px_0px_0px_2px_#000]'
-                                : 'border-gray-400 hover:scale-110 opacity-90'
+                                ? 'scale-125 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                                : 'hover:scale-110 opacity-80 hover:opacity-100'
                             }`}
                           >
-                            {/* Si es blanco le damos un bordecito sutil para que no se pierda en el fondo */}
-                            {colorName.toLowerCase() === 'blanco' && (
-                              <span className="absolute inset-0 rounded-full border border-gray-300" />
-                            )}
+                            {/* Círculo interior de color (un poquitito más chico) */}
+                            <span
+                              style={{ backgroundColor: hex }}
+                              className={`w-full h-full rounded-full block ${
+                                colorName.toLowerCase() === 'blanco' ? 'border border-gray-300' : ''
+                              }`}
+                            />
                           </button>
                         )
                       })}
@@ -346,6 +387,81 @@ export default function App() {
           </div>
         </div>
       )}
+      {/* ==================================================== */}
+      {/* SIDEBAR DEL CARRITO                                  */}
+      {/* ==================================================== */}
+      {/* Fondo oscuro para cuando está abierto */}
+      {carritoAbierto && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 transition-opacity" 
+          onClick={() => setCarritoAbierto(false)}
+        />
+      )}
+
+      {/* Panel lateral */}
+      <div className={`fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white border-l-0 sm:border-l-4 border-black z-50 transform transition-transform duration-300 flex flex-col ${carritoAbierto ? 'translate-x-0' : 'translate-x-full'}`}>
+        
+        {/* Cabecera del carrito */}
+        <div className="p-5 border-b-4 border-black flex justify-between items-center bg-gray-50">
+          <h2 className="text-xl font-black uppercase tracking-widest">Tu Pedido</h2>
+          <button 
+            onClick={() => setCarritoAbierto(false)}
+            className="w-8 h-8 flex items-center justify-center bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-white font-bold cursor-pointer transition-colors"
+          >
+            X
+          </button>
+        </div>
+
+        {/* Lista de productos */}
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+          {carrito.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+              <p className="font-bold uppercase tracking-wider text-sm">El carrito está vacío</p>
+            </div>
+          ) : (
+            carrito.map(item => (
+              <div key={item.cartId} className="flex gap-4 border-2 border-black p-3 bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] relative">
+                <button 
+                  onClick={() => eliminarDelCarrito(item.cartId)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 border-2 border-black text-white text-xs font-bold flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                  title="Eliminar"
+                >
+                  X
+                </button>
+                
+                <div className="w-16 h-16 border-2 border-black bg-gray-100 flex-shrink-0">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                  ) : null}
+                </div>
+                
+                <div className="flex-1 flex flex-col justify-center">
+                  <h4 className="font-bold text-sm leading-tight uppercase line-clamp-1">{item.name}</h4>
+                  <p className="text-[10px] text-gray-500 font-extrabold tracking-wider uppercase mt-1">Color: {item.colorSeleccionado}</p>
+                  <p className="font-black mt-1">${Number(item.price).toLocaleString('es-AR')}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer con Total y Botón de Checkout */}
+        {carrito.length > 0 && (
+          <div className="p-5 border-t-4 border-black bg-white">
+            <div className="flex justify-between items-end mb-4">
+              <span className="font-bold uppercase tracking-wider text-sm">Total:</span>
+              <span className="font-black text-2xl">${carrito.reduce((acc, curr) => acc + curr.price, 0).toLocaleString('es-AR')}</span>
+            </div>
+            
+            <button 
+              onClick={generarPedido}
+              className="w-full py-4 bg-black text-white border-2 border-black font-black uppercase tracking-wider text-sm hover:bg-white hover:text-black hover:translate-x-[-2px] hover:translate-y-[-2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
+            >
+              Generar Pedido para IG 🚀
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
