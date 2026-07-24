@@ -16,7 +16,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = FastAPI(title="DivaStore API", version="1.0.0")
 
-# Habilitar CORS para que React (puerto 5173 normalmente) pueda hablar con FastAPI sin problemas
+# Habilitar CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Esquema de Pydantic para validar los datos del producto
+# Esquemas de Pydantic
 class ProductCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -33,31 +33,56 @@ class ProductCreate(BaseModel):
     stock: int = 0
     category: str
     image_url: Optional[str] = None
+    image_urls: List[str] = []
+    colors: List[str] = []
+
+class ProductUpdate(BaseModel):
+    name: str
+    price: float
+    stock: int
 
 @app.get("/")
 def read_root():
-    return {"message": "¡API de DivaStore conectada a Supabase con éxito!"}
+    return {"message": "API conectada a Supabase con éxito"}
 
 # ENDPOINTS 
-# 1. Obtener todos los productos
+
+# GET Productos
 @app.get("/products")
 def get_products():
     response = supabase.table("products").select("*").execute()
     return response.data
 
-# 2. Crear un producto
+# POST Crear productos
 @app.post("/products", status_code=status.HTTP_201_CREATED)
-def create_product(product: ProductCreate):
-    response = supabase.table("products").insert(product.dict()).execute()
-    
-    if not response.data:
-        raise HTTPException(status_code=400, detail="No se pudo crear el producto")
-    
-    return response.data[0]
+async def create_product(product: ProductCreate):
+    try:
+        response = supabase.table("products").insert(product.dict()).execute()
+        if not response.data:
+            raise HTTPException(status_code=400, detail="No se pudo crear el producto")
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# 3. Eliminar un producto por ID
+# DELETE Producto por id
 @app.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_product(product_id: int):
     response = supabase.table("products").delete().eq("id", product_id).execute()
-    
     return None
+
+# 4. Actualizar producto (Edición rápida)
+@app.put("/products/{product_id}")
+async def update_product(product_id: int, product: ProductUpdate):
+    try:
+        response = supabase.table("products").update({
+            "name": product.name,
+            "price": product.price,
+            "stock": product.stock
+        }).eq("id", product_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+            
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
