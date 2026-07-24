@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Definimos los colores cálidos de forma nativa para Tailwind v3 */
+.bg-warm-dark { background-color: #2B221E; }
+.bg-warm-light { background-color: #FDFBF7; }
+.bg-warm-card { background-color: #F3EDE4; }
+.text-warm-dark { color: #2B221E; }
+.text-warm-light { color: #FAF6F0; }
+.border-warm { border-color: #4A3B32; }
+.shadow-warm { box-shadow: 6px 6px 0px 0px rgba(74, 59, 50, 1); }
