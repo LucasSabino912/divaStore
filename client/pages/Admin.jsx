@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import heic2any from "heic2any"
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -40,6 +41,39 @@ export default function AdminPage() {
   const [editPrice, setEditPrice] = useState('')
   const [editStock, setEditStock] = useState('')
 
+  const convertImage = async (file) => {
+    if (!file) return null;
+
+    const esHeic = file.type === "image/heic" ||
+                   file.type === "image/heif" ||
+                   file.name.toLowerCase().endsWith(".heic") ||
+                   file.name.toLowerCase().endsWith(".heif");
+
+    if (esHeic) {
+      try {
+        let convertedBlob = await heic2any({
+          blob: file, 
+          toType: "image/jpeg",
+          quality: 0.85
+        });
+
+        if (Array.isArray(convertedBlob)){
+          convertedBlob = convertedBlob[0];
+        }
+
+        const nuevoNombre = file.name.replace(/\.(heic|heif)$/i, "") + ".jpg";
+
+        return new File([convertedBlob], nuevoNombre, {
+          type: "image/jpeg",
+        });
+      } catch (error) {
+        console.error("Error al convertir HEIC:", error);
+        alert(`La imagen "${file.name}" no pudo ser convertida por el navegador debido a su codificación HEIC/HDR. Por favor, convertila a .jpg en tu compu antes de subirla.`);
+        throw new Error("Conversión cancelada.");
+      }
+    }
+    return file; // Si ya es JPG/PNG pasa directo
+  };
   useEffect(() => {
     const authStatus = sessionStorage.getItem('adminAutenticado')
     if (authStatus === 'true') {
@@ -145,22 +179,24 @@ export default function AdminPage() {
       let imgUrl = null
       let imgUrls = []
 
-      // Subir Foto de Portada
+      // 1. Subir Foto de Portada (Procesando HEIC si aplica)
       if (portadaFile) {
-        const safeFileName = portadaFile.name.replace(/[^a-zA-Z0-9.]/g, '_')
+        const fileListo = await convertImage(portadaFile)
+        const safeFileName = fileListo.name.replace(/[^a-zA-Z0-9.]/g, '_')
         const fileName = `portada-${Date.now()}-${safeFileName}`
-        const { error } = await supabase.storage.from('productos-fotos').upload(fileName, portadaFile)
+        const { error } = await supabase.storage.from('productos-fotos').upload(fileName, fileListo)
         if (error) throw error
         imgUrl = supabase.storage.from('productos-fotos').getPublicUrl(fileName).data.publicUrl
       }
 
-      // Subir Galería de Fotos
+      // 2. Subir Galería de Fotos (Procesando HEIC para cada archivo)
       if (galeriaFiles && galeriaFiles.length > 0) {
         for (let i = 0; i < galeriaFiles.length; i++) {
-          const file = galeriaFiles[i]
-          const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_')
+          const fileOriginal = galeriaFiles[i]
+          const fileListo = await convertImage(fileOriginal)
+          const safeFileName = fileListo.name.replace(/[^a-zA-Z0-9.]/g, '_')
           const fileName = `galeria-${Date.now()}-${i}-${safeFileName}`
-          const { error } = await supabase.storage.from('productos-fotos').upload(fileName, file)
+          const { error } = await supabase.storage.from('productos-fotos').upload(fileName, fileListo)
           if (error) throw error
           imgUrls.push(supabase.storage.from('productos-fotos').getPublicUrl(fileName).data.publicUrl)
         }
@@ -360,7 +396,7 @@ export default function AdminPage() {
                       </div>
                     ) : (
                       
-                      // MODO VISTA COMPACTA (SIN IMAGEN)
+                      // MODO VISTA COMPACTA
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">

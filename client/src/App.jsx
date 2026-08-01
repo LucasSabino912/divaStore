@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { getProducts } from '../services/api' // Ajustá la ruta si es necesario
+import { getProducts } from '../services/api' 
 
-// 1. DICCIONARIO DE COLORES (Mapea el nombre que ponés en el admin a un color real)
+// 1. DICCIONARIO DE COLORES
 const MAPA_COLORES = {
   'negro': '#000000',
   'blanco': '#FFFFFF',
@@ -26,7 +26,7 @@ const MAPA_COLORES = {
 const obtenerColorHex = (nombreColor) => {
   if (!nombreColor) return '#CCCCCC'
   const clave = nombreColor.toLowerCase().trim()
-  return MAPA_COLORES[clave] || '#888888' // Gris por defecto si no existe
+  return MAPA_COLORES[clave] || '#888888'
 }
 
 export default function App() {
@@ -43,25 +43,23 @@ export default function App() {
   const [colorElegido, setColorElegido] = useState('')
   const [carritoAbierto, setCarritoAbierto] = useState(false)
 
-  // Le agregamos un ID único a cada ítem del carrito (por si agrega dos lentes iguales pero de distinto color)
   const agregarAlCarrito = (product, color = null) => {
-    const colorFinal = color || (coloresLimpios.length > 0 ? coloresLimpios[0] : 'Único')
+    const colorFinal = color || (product.colors && product.colors.length > 0 ? product.colors[0] : 'Único')
     
     const nuevoItem = {
       ...product,
       colorSeleccionado: colorFinal,
-      cartId: Date.now() + Math.random() // ID único para el carrito
+      cartId: Date.now() + Math.random()
     }
     
     setCarrito([...carrito, nuevoItem])
-    setCarritoAbierto(true) // Abre el carrito automáticamente para que vea que se agregó
+    setCarritoAbierto(true)
   }
 
   const eliminarDelCarrito = (cartId) => {
     setCarrito(carrito.filter(item => item.cartId !== cartId))
   }
 
-  // Lógica para armar el texto y copiarlo
   const generarPedido = () => {
     if (carrito.length === 0) return
 
@@ -77,8 +75,7 @@ export default function App() {
 
     navigator.clipboard.writeText(mensaje)
       .then(() => {
-        alert("¡Pedido copiado al portapapeles! 📋\n\nTe redirigimos a nuestro Instagram para que pegues el mensaje en el chat.")
-        // Redirige directamente al perfil de Diva Store
+        alert("¡Pedido copiado al portapapeles! \n\nTe redirigimos a nuestro Instagram para que pegues el mensaje en el chat.")
         window.open('https://www.instagram.com/diva_store_ag/', '_blank')
       })
       .catch(() => alert("Hubo un error al copiar el texto, intentá de nuevo."))
@@ -99,7 +96,6 @@ export default function App() {
     fetchData()
   }, [])
 
-  // Lógica del Modal
   const abrirModal = (prod) => {
     setProductoSeleccionado(prod)
     setImagenPrincipal(prod.image_url || (prod.image_urls && prod.image_urls[0]) || null)
@@ -112,7 +108,6 @@ export default function App() {
     setColorElegido('')
   }
 
-  // Filtrado y Ordenamiento
   const categoriasUnicas = ['todos', ...new Set(products.map(p => p.category?.toLowerCase()).filter(Boolean))]
 
   const productosFiltrados = products.filter(p => {
@@ -126,7 +121,6 @@ export default function App() {
     return b.id - a.id
   })
 
-  // Evitar scroll del fondo cuando el modal está abierto
   useEffect(() => {
     if (productoSeleccionado) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = 'unset'
@@ -136,133 +130,142 @@ export default function App() {
     <div className="min-h-screen bg-white text-black font-sans relative">
       
       {/* NAVBAR */}
-      <header className="border-b-2 border-black px-6 py-4 flex justify-between items-center sticky top-0 bg-black text-white z-40">
-        <h1 className="text-xl font-extrabold tracking-widest uppercase">Diva Store</h1>
-          <button 
-            onClick={() => setCarritoAbierto(true)}
-            className="border-2 border-white px-4 py-2 text-sm font-bold bg-black text-white shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] transition-all cursor-pointer"
-          >
-            Carrito ({carrito.length})
-          </button>
+      <header className="border-b-2 border-black px-4 sm:px-6 py-2 sm:py-3 flex justify-between items-center sticky top-0 bg-white text-black z-40 shadow-sm">
+        <div className="flex items-center h-12 sm:h-16">
+          <img 
+            src="/logo.jpg" 
+            alt="Diva Store" 
+            className="h-full w-auto object-contain cursor-pointer"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          />
+        </div>
+        <button 
+          onClick={() => setCarritoAbierto(true)}
+          className="border-2 border-black px-4 py-2 text-xs sm:text-sm font-bold bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
+        >
+          Carrito ({carrito.length})
+        </button>
       </header>
 
       {/* CONTENIDO PRINCIPAL */}
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        {/* BLOQUE NUEVO CON LOGO */}
-        <div className="flex flex-col items-center justify-center text-center mb-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+        <div className="sticky top-16 sm:top-20 z-0 mb-6 w-full h-72 sm:h-96 md:h-[450px] border-2 border-black overflow-hidden bg-stone-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <img 
-            src="/logo.jpg" 
-            alt="Diva Store Logo" 
-            className="h-20 sm:h-28 md:h-36 w-auto object-contain mb-3"
+            src="/portada1.jpg" 
+            alt="Diva Store Portada" 
+            className="w-full h-full object-cover object-center"
+            onError={(e) => {
+              e.currentTargetstyle.display = 'none'
+              e.currentTarget.parentElement.classList.add('flex', 'items-center', 'justify-center')
+              e.currentTarget.parentElement.innerHTML = '<span class="font-black text-xs sm:text-sm uppercase tracking-widest text-gray-400">[ Carga portada.jpg en /public ]</span>'
+            }}
           />
         </div>
 
-        {/* BARRA DE FILTROS */}
-        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-10 pb-6 border-b-2 border-black">
-          <div className="flex overflow-x-auto gap-2 pb-2 md:pb-0 no-scrollbar">
-            {categoriasUnicas.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategoriaActiva(cat)}
-                className={`border-2 border-black px-4 py-2 text-sm font-bold uppercase whitespace-nowrap transition-all cursor-pointer ${
-                  categoriaActiva === cat
-                    ? 'bg-black text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)]'
-                    : 'bg-white text-black hover:bg-gray-100'
-                }`}
+        {/* 2. CAPA SUPERIOR DEL CATÁLOGO QUE SUBE Y TAPA LA PORTADA */}
+        <div className="relative z-10 bg-white pt-4 border-t-2 border-black">
+          
+          {/* BARRA DE FILTROS */}
+          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-10 pb-6 border-b-2 border-black bg-white">
+            <div className="flex overflow-x-auto gap-2 pb-2 md:pb-0 no-scrollbar">
+              {categoriasUnicas.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategoriaActiva(cat)}
+                  className={`border-2 border-black px-4 py-2 text-sm font-bold uppercase whitespace-nowrap transition-all cursor-pointer ${
+                    categoriaActiva === cat
+                      ? 'bg-black text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)]'
+                      : 'bg-white text-black hover:bg-gray-100'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Ordenar:</span>
+              <select
+                value={orden}
+                onChange={(e) => setOrden(e.target.value)}
+                className="border-2 border-black px-3 py-2 text-sm font-bold bg-white focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer"
               >
-                {cat}
-              </button>
+                <option value="recientes">Más recientes</option>
+                <option value="menor-precio">Menor precio</option>
+                <option value="mayor-precio">Mayor precio</option>
+              </select>
+            </div>
+          </div>
+
+          {/* ESTADOS DE CARGA / VACÍO */}
+          {loading && (
+            <div className="text-center py-20 font-bold uppercase tracking-wider text-gray-500 animate-pulse bg-white">
+              Cargando catálogo...
+            </div>
+          )}
+
+          {!loading && productosOrdenados.length === 0 && (
+            <div className="text-center py-20 border-2 border-dashed border-black p-8 bg-white">
+              <p className="font-bold text-lg uppercase">No hay productos disponibles.</p>
+            </div>
+          )}
+
+          {/* GRILLA DE PRODUCTOS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 bg-white pb-12">
+            {!loading && productosOrdenados.map((product) => (
+              <div 
+                key={product.id} 
+                className="border-2 border-black p-4 flex flex-col justify-between shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all bg-white cursor-pointer group"
+              >
+                <div onClick={() => abrirModal(product)}>
+                  <div className="w-full h-56 bg-gray-100 border-2 border-black mb-4 flex items-center justify-center overflow-hidden relative">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">[ Sin Imagen ]</span>
+                    )}
+                    {product.colors && product.colors.length > 1 && (
+                      <span className="absolute bottom-2 left-2 bg-white border-2 border-black text-[10px] font-bold px-2 py-0.5">
+                        +{product.colors.length} Colores
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="text-xs font-bold uppercase tracking-wider bg-black text-white px-2 py-1">
+                    {product.category}
+                  </span>
+                  
+                  <h3 className="font-bold text-lg mt-3 group-hover:underline">{product.name}</h3>
+                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{product.description || "Sin descripción."}</p>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between pt-4 border-t border-gray-200">
+                  <span className="font-extrabold text-lg">${Number(product.price).toLocaleString('es-AR')}</span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      agregarAlCarrito(product);
+                    }}
+                    className="border-2 border-black px-3 py-1 text-sm font-bold bg-white hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Ordenar:</span>
-            <select
-              value={orden}
-              onChange={(e) => setOrden(e.target.value)}
-              className="border-2 border-black px-3 py-2 text-sm font-bold bg-white focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer"
-            >
-              <option value="recientes">Más recientes</option>
-              <option value="menor-precio">Menor precio</option>
-              <option value="mayor-precio">Mayor precio</option>
-            </select>
-          </div>
-        </div>
-
-        {/* ESTADOS DE CARGA / VACÍO */}
-        {loading && (
-          <div className="text-center py-20 font-bold uppercase tracking-wider text-gray-500 animate-pulse">
-            Cargando catálogo...
-          </div>
-        )}
-
-        {!loading && productosOrdenados.length === 0 && (
-          <div className="text-center py-20 border-2 border-dashed border-black p-8">
-            <p className="font-bold text-lg uppercase">No hay productos disponibles.</p>
-          </div>
-        )}
-
-        {/* GRILLA DE PRODUCTOS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {!loading && productosOrdenados.map((product) => (
-            <div 
-              key={product.id} 
-              className="border-2 border-black p-4 flex flex-col justify-between shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all bg-white cursor-pointer group"
-            >
-              <div onClick={() => abrirModal(product)}>
-                {/* Imagen del producto */}
-                <div className="w-full h-56 bg-gray-100 border-2 border-black mb-4 flex items-center justify-center overflow-hidden relative">
-                  {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  ) : (
-                    <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">[ Sin Imagen ]</span>
-                  )}
-                  {/* Etiqueta rápida si tiene varios colores */}
-                  {product.colors && product.colors.length > 1 && (
-                    <span className="absolute bottom-2 left-2 bg-white border-2 border-black text-[10px] font-bold px-2 py-0.5">
-                      +{product.colors.length} Colores
-                    </span>
-                  )}
-                </div>
-
-                <span className="text-xs font-bold uppercase tracking-wider bg-black text-white px-2 py-1">
-                  {product.category}
-                </span>
-                
-                <h3 className="font-bold text-lg mt-3 group-hover:underline">{product.name}</h3>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{product.description || "Sin descripción."}</p>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between pt-4 border-t border-gray-200">
-                <span className="font-extrabold text-lg">${Number(product.price).toLocaleString('es-AR')}</span>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation(); // Evita abrir el modal al tocar "Agregar" directo
-                    agregarAlCarrito(product);
-                  }}
-                  className="border-2 border-black px-3 py-1 text-sm font-bold bg-white hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer"
-                >
-                  Agregar
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       </main>
 
-      {/* ==================================================== */}
-      {/* MODAL DEL PRODUCTO (Responsivo y Neo-Brutalista)     */}
-      {/* ==================================================== */}
+      {/* MODAL DEL PRODUCTO */}
       {productoSeleccionado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={cerrarModal}>
-          
-          {/* Contenedor del Modal */}
           <div 
             className="bg-white border-4 border-black w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row relative"
-            onClick={(e) => e.stopPropagation()} // Evita que se cierre al hacer clic adentro
+            onClick={(e) => e.stopPropagation()} 
           >
-            
-            {/* Botón Cerrar Absolute */}
             <button 
               onClick={cerrarModal}
               className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-red-500 hover:text-white font-bold cursor-pointer transition-colors"
@@ -270,10 +273,7 @@ export default function App() {
               X
             </button>
 
-            {/* SECCIÓN IZQUIERDA: GALERÍA DE IMÁGENES */}
             <div className="w-full md:w-1/2 p-6 border-b-4 md:border-b-0 md:border-r-4 border-black flex flex-col gap-4 bg-gray-50">
-              
-              {/* Imagen Principal Grande */}
               <div className="w-full aspect-square border-2 border-black bg-white overflow-hidden flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 {imagenPrincipal ? (
                   <img src={imagenPrincipal} alt={productoSeleccionado.name} className="w-full h-full object-cover" />
@@ -282,10 +282,9 @@ export default function App() {
                 )}
               </div>
 
-              {/* Carrusel / Miniaturas (Une Portada + Galería filtrando repetidas o vacías) */}
               <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                 {[productoSeleccionado.image_url, ...(productoSeleccionado.image_urls || [])]
-                  .filter((url, index, self) => url && self.indexOf(url) === index) // Filtra nulos y duplicados
+                  .filter((url, index, self) => url && self.indexOf(url) === index)
                   .map((img, idx) => (
                     <div 
                       key={idx} 
@@ -302,9 +301,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* SECCIÓN DERECHA: INFO Y COMPRA */}
             <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between bg-white">
-              
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider bg-black text-white px-2 py-1 mb-4 inline-block">
                   {productoSeleccionado.category || 'General'}
@@ -322,7 +319,6 @@ export default function App() {
                   {productoSeleccionado.description || 'Este producto no cuenta con descripción detallada.'}
                 </p>
 
-                {/* SELECTOR DE COLORES (Diseño Anillo Doble) */}
                 {productoSeleccionado.colors && productoSeleccionado.colors.length > 0 && (
                   <div className="mb-8 p-4 border-2 border-black bg-gray-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                     <p className="text-xs font-black uppercase tracking-wider mb-3">
@@ -346,7 +342,6 @@ export default function App() {
                                 : 'hover:scale-110 opacity-80 hover:opacity-100'
                             }`}
                           >
-                            {/* Círculo interior de color (un poquitito más chico) */}
                             <span
                               style={{ backgroundColor: hex }}
                               className={`w-full h-full rounded-full block ${
@@ -361,7 +356,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* ACCIONES (Stock y Agregar al Carrito) */}
               <div className="mt-8">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
                   {productoSeleccionado.stock > 0 ? `${productoSeleccionado.stock} unidades en stock` : 'Sin stock'}
@@ -370,7 +364,7 @@ export default function App() {
                 <button 
                   onClick={() => {
                     agregarAlCarrito(productoSeleccionado, colorElegido)
-                    cerrarModal() // Opcional: cierra el modal tras agregar
+                    cerrarModal() 
                   }}
                   disabled={productoSeleccionado.stock <= 0}
                   className={`w-full py-4 border-2 border-black font-black uppercase tracking-wider text-sm transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
@@ -387,10 +381,8 @@ export default function App() {
           </div>
         </div>
       )}
-      {/* ==================================================== */}
-      {/* SIDEBAR DEL CARRITO                                  */}
-      {/* ==================================================== */}
-      {/* Fondo oscuro para cuando está abierto */}
+
+      {/* SIDEBAR / FULLSCREEN CARRITO */}
       {carritoAbierto && (
         <div 
           className="fixed inset-0 bg-black/50 z-50 transition-opacity" 
@@ -398,10 +390,7 @@ export default function App() {
         />
       )}
 
-      {/* Panel lateral */}
       <div className={`fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white border-l-0 sm:border-l-4 border-black z-50 transform transition-transform duration-300 flex flex-col ${carritoAbierto ? 'translate-x-0' : 'translate-x-full'}`}>
-        
-        {/* Cabecera del carrito */}
         <div className="p-5 border-b-4 border-black flex justify-between items-center bg-gray-50">
           <h2 className="text-xl font-black uppercase tracking-widest">Tu Pedido</h2>
           <button 
@@ -412,7 +401,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Lista de productos */}
         <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
           {carrito.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-400">
@@ -445,7 +433,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Footer con Total y Botón de Checkout */}
         {carrito.length > 0 && (
           <div className="p-5 border-t-4 border-black bg-white">
             <div className="flex justify-between items-end mb-4">
@@ -457,7 +444,7 @@ export default function App() {
               onClick={generarPedido}
               className="w-full py-4 bg-black text-white border-2 border-black font-black uppercase tracking-wider text-sm hover:bg-white hover:text-black hover:translate-x-[-2px] hover:translate-y-[-2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
             >
-              Generar Pedido para IG 🚀
+              Enviar Pedido a Whatsapp
             </button>
           </div>
         )}

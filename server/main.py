@@ -45,6 +45,11 @@ class ProductUpdate(BaseModel):
 def read_root():
     return {"message": "API conectada a Supabase con éxito"}
 
+# Endpoint para el bota
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 # ENDPOINTS 
 
 # GET Productos
