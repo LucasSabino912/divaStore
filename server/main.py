@@ -46,9 +46,11 @@ def read_root():
     return {"message": "API conectada a Supabase con éxito"}
 
 # Endpoint para el bota
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok"}
+
+
 
 # ENDPOINTS 
 
