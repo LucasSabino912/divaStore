@@ -156,7 +156,7 @@ export default function App() {
             alt="Diva Store Portada" 
             className="w-full h-full object-cover object-center"
             onError={(e) => {
-              e.currentTargetstyle.display = 'none'
+              e.currentTarget.style.display = 'none'
               e.currentTarget.parentElement.classList.add('flex', 'items-center', 'justify-center')
               e.currentTarget.parentElement.innerHTML = '<span class="font-black text-xs sm:text-sm uppercase tracking-widest text-gray-400">[ Carga portada.jpg en /public ]</span>'
             }}
