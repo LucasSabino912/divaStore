@@ -444,7 +444,7 @@ export default function App() {
               onClick={generarPedido}
               className="w-full py-4 bg-black text-white border-2 border-black font-black uppercase tracking-wider text-sm hover:bg-white hover:text-black hover:translate-x-[-2px] hover:translate-y-[-2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
             >
-              Enviar Pedido a Whatsapp
+              Enviar Pedido a Instagram
             </button>
           </div>
         )}
