@@ -152,7 +152,7 @@ export default function App() {
 
         <div className="sticky top-16 sm:top-20 z-0 mb-6 w-full h-72 sm:h-96 md:h-[450px] border-2 border-black overflow-hidden bg-stone-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <img 
-            src="/portada1.jpg" 
+            src="/portada2.jpg" 
             alt="Diva Store Portada" 
             className="w-full h-full object-cover object-center"
             onError={(e) => {
