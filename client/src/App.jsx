@@ -26,6 +26,7 @@ const MAPA_COLORES = {
   'violeta': '#7F00FF',
   'celeste': '#B2FFFF',
   'verde marron': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #2E7D32 3px, #5C4033 5px)',
+  'verde marrón': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #2E7D32 3px, #5C4033 5px)',
   'nude': '#F2D2BD',
 
   // ANIMAL PRINTS
