@@ -25,7 +25,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Esquemas de Pydantic
 class ProductCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -40,6 +39,10 @@ class ProductUpdate(BaseModel):
     name: str
     price: float
     stock: int
+    description: Optional[str] = None
+    colors: List[str] = []
+    image_url: Optional[str] = None
+    image_urls: List[str] = []
 
 @app.get("/")
 def read_root():
@@ -49,7 +52,6 @@ def read_root():
 @app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok"}
-
 
 
 # ENDPOINTS 
@@ -77,19 +79,18 @@ def delete_product(product_id: int):
     response = supabase.table("products").delete().eq("id", product_id).execute()
     return None
 
-# 4. Actualizar producto (Edición rápida)
 @app.put("/products/{product_id}")
 async def update_product(product_id: int, product: ProductUpdate):
     try:
-        response = supabase.table("products").update({
-            "name": product.name,
-            "price": product.price,
-            "stock": product.stock
-        }).eq("id", product_id).execute()
+        # Pydantic convierte los datos a un diccionario apto para Supabase
+        update_data = product.dict()
+
+        response = supabase.table("products").update(update_data).eq("id", product_id).execute()
         
         if not response.data:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
             
         return response.data[0]
     except Exception as e:
+        print("Error en update:", str(e))  # Muestra el error exacto en tu consola de FastAPI
         raise HTTPException(status_code=500, detail=str(e))
