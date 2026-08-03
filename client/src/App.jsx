@@ -20,8 +20,17 @@ const MAPA_COLORES = {
   'azul': '#1976D2',
   'plateado': '#C0C0C0',
   'plata': '#C0C0C0',
-  'transparente': '#E3F2FD'
+  'transparente': '#E3F2FD',
+
+  // 🐆 NUEVOS: ANIMAL PRINTS
+  'animal print normal': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #c3793a 3px, #e3c16f 5px)',
+  'animal print marrón': 'repeating-radial-gradient(circle at 50% 50%, #2b1704 0px, #2b1704 2px, #5c4033 3px, #8c6849 5px)',
+  'animal print marron': 'repeating-radial-gradient(circle at 50% 50%, #2b1704 0px, #2b1704 2px, #5c4033 3px, #8c6849 5px)',
+  'animal print amarillo': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #e66100 3px, #ffeb3b 5px)',
+  'animal print transparente': 'repeating-radial-gradient(circle at 50% 50%, #4a2c11 0px, #4a2c11 2px, #c3793a 3px, #e3f2fd 5px)',
+  'animal print azul': 'repeating-radial-gradient(circle at 50% 50%, #0d47a1 0px, #0d47a1 2px, #1976d2 3px, #90caf9 5px)'
 }
+
 
 const obtenerColorHex = (nombreColor) => {
   if (!nombreColor) return '#CCCCCC'
