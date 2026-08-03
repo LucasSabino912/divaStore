@@ -25,25 +25,28 @@ export default function AdminPage() {
   const [description, setDescription] = useState('')
   const [colorsInput, setColorsInput] = useState('')
   
-  // Imágenes
+  // Imágenes de carga
   const [imagenesSeleccionadas, setImagenesSeleccionadas] = useState([])
   const [cargando, setCargando] = useState(false)
-  
   const fileInputRef = useRef(null)
 
   const [productos, setProductos] = useState([])
   const [categoriasExistentes, setCategoriasExistentes] = useState([])
   const [cargandoLista, setCargandoLista] = useState(false)
 
-  // Estados para Editar (NUEVO: editColors)
+  // ------------------------------------------
+  // Estados para Editar
+  // ------------------------------------------
   const [editandoId, setEditandoId] = useState(null)
   const [editName, setEditName] = useState('')
   const [editPrice, setEditPrice] = useState('')
   const [editStock, setEditStock] = useState('')
   const [editColors, setEditColors] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editImages, setEditImages] = useState([]) // Fotos actuales en edición
 
   // ------------------------------------------
-  // FUNCIONES PARA MANEJO DE IMÁGENES
+  // FUNCIONES PARA MANEJO DE IMÁGENES (CARGA)
   // ------------------------------------------
   const handleFileChange = (e) => {
     if (e.target.files) {
@@ -60,37 +63,32 @@ export default function AdminPage() {
     const nuevoOrden = [...imagenesSeleccionadas]
     const nuevaPosicion = index + direccion
     if (nuevaPosicion < 0 || nuevaPosicion >= nuevoOrden.length) return
-
     const [imagenMovida] = nuevoOrden.splice(index, 1)
     nuevoOrden.splice(nuevaPosicion, 0, imagenMovida)
     setImagenesSeleccionadas(nuevoOrden)
   }
 
+  // ------------------------------------------
+  // FUNCIONES PARA MANEJO DE IMÁGENES (EDICIÓN)
+  // ------------------------------------------
+  const moverImagenEdicion = (index, direccion) => {
+    const nuevoOrden = [...editImages]
+    const nuevaPosicion = index + direccion
+    if (nuevaPosicion < 0 || nuevaPosicion >= nuevoOrden.length) return
+    const [imagenMovida] = nuevoOrden.splice(index, 1)
+    nuevoOrden.splice(nuevaPosicion, 0, imagenMovida)
+    setEditImages(nuevoOrden)
+  }
+
   const convertImage = async (file) => {
     if (!file) return null;
-
-    const esHeic = file.type === "image/heic" ||
-                   file.type === "image/heif" ||
-                   file.name.toLowerCase().endsWith(".heic") ||
-                   file.name.toLowerCase().endsWith(".heif");
-
+    const esHeic = file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
     if (esHeic) {
       try {
-        let convertedBlob = await heic2any({
-          blob: file, 
-          toType: "image/jpeg",
-          quality: 0.85
-        });
-
-        if (Array.isArray(convertedBlob)){
-          convertedBlob = convertedBlob[0];
-        }
-
+        let convertedBlob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.85 });
+        if (Array.isArray(convertedBlob)) convertedBlob = convertedBlob[0];
         const nuevoNombre = file.name.replace(/\.(heic|heif)$/i, "") + ".jpg";
-
-        return new File([convertedBlob], nuevoNombre, {
-          type: "image/jpeg",
-        });
+        return new File([convertedBlob], nuevoNombre, { type: "image/jpeg" });
       } catch (error) {
         console.error("Error al convertir HEIC:", error);
         alert(`La imagen "${file.name}" no pudo ser convertida. Convertila a .jpg en tu compu antes de subirla.`);
@@ -102,9 +100,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem('adminAutenticado')
-    if (authStatus === 'true') {
-      setIsLoggedIn(true)
-    }
+    if (authStatus === 'true') setIsLoggedIn(true)
     setVerificando(false)
   }, [])
 
@@ -120,9 +116,7 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (isLoggedIn && vista === 'gestionar') {
-      fetchProductos()
-    }
+    if (isLoggedIn && vista === 'gestionar') fetchProductos()
   }, [vista, isLoggedIn])
 
   const fetchProductos = async () => {
@@ -157,19 +151,26 @@ export default function AdminPage() {
     }
   }
 
-  // NUEVO: Agregamos el seteo de los colores cuando arranca la edición
+  // INICIAR EDICIÓN: Agrupa todas las fotos (portada + galería) para ordenarlas
   const iniciarEdicion = (prod) => {
     setEditandoId(prod.id)
     setEditName(prod.name)
     setEditPrice(prod.price)
     setEditStock(prod.stock)
     setEditColors(prod.colors && prod.colors.length > 0 ? prod.colors.join(', ') : '')
+    setEditDescription(prod.description || '')
+    
+    const fotosActuales = []
+    if (prod.image_url) fotosActuales.push(prod.image_url)
+    if (prod.image_urls && prod.image_urls.length > 0) fotosActuales.push(...prod.image_urls)
+    setEditImages(fotosActuales)
   }
 
-  // NUEVO: Enviamos los colores actualizados al backend
   const handleActualizar = async (id) => {
     try {
       const listaColoresActualizada = editColors ? editColors.split(',').map(c => c.trim()).filter(Boolean) : []
+      const nuevaPortada = editImages.length > 0 ? editImages[0] : null
+      const nuevaGaleria = editImages.length > 1 ? editImages.slice(1) : []
 
       const res = await fetch(`${API_URL}/products/${id}`, {
         method: 'PUT',
@@ -178,13 +179,25 @@ export default function AdminPage() {
           name: editName,
           price: parseFloat(editPrice),
           stock: parseInt(editStock) || 0,
-          colors: listaColoresActualizada
+          colors: listaColoresActualizada,
+          description: editDescription,
+          image_url: nuevaPortada,
+          image_urls: nuevaGaleria
         })
       })
 
       if (res.ok) {
         setProductos(productos.map(p => 
-          p.id === id ? { ...p, name: editName, price: editPrice, stock: editStock, colors: listaColoresActualizada } : p
+          p.id === id ? { 
+            ...p, 
+            name: editName, 
+            price: editPrice, 
+            stock: editStock, 
+            colors: listaColoresActualizada,
+            description: editDescription,
+            image_url: nuevaPortada,
+            image_urls: nuevaGaleria
+          } : p
         ))
         setEditandoId(null)
         alert('¡Actualizado con éxito!')
@@ -206,7 +219,6 @@ export default function AdminPage() {
     try {
       let imgUrl = null
       let imgUrls = []
-
       const portadaFile = imagenesSeleccionadas[0]
       const fileListo = await convertImage(portadaFile)
       const safeFileName = fileListo.name.replace(/[^a-zA-Z0-9.]/g, '_')
@@ -226,7 +238,6 @@ export default function AdminPage() {
       }
 
       const listaColores = colorsInput ? colorsInput.split(',').map(c => c.trim()).filter(Boolean) : []
-
       const res = await fetch(`${API_URL}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -272,7 +283,6 @@ export default function AdminPage() {
             <h1 className="text-2xl font-black uppercase tracking-tight">Acceso Admin</h1>
             <p className="text-stone-600 text-sm mt-1">Diva Store Control Panel</p>
           </div>
-          
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider mb-1">Usuario</label>
@@ -310,16 +320,10 @@ export default function AdminPage() {
         <p className="text-center text-stone-600 text-xs sm:text-sm mb-6">Gestión de stock y catálogo.</p>
         
         <div className="flex justify-center items-center gap-3 mb-8">
-          <button 
-            onClick={() => { setVista('cargar'); setEditandoId(null); }} 
-            className={`flex-1 py-6 px-4 border-2 border-warm font-black uppercase text-xs sm:text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(74,59,50,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(74,59,50,1)] cursor-pointer ${vista === 'cargar' ? 'bg-warm-dark text-warm-light' : 'bg-warm-light text-warm-dark'}`}
-          >
+          <button onClick={() => { setVista('cargar'); setEditandoId(null); }} className={`flex-1 py-6 px-4 border-2 border-warm font-black uppercase text-xs sm:text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(74,59,50,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(74,59,50,1)] cursor-pointer ${vista === 'cargar' ? 'bg-warm-dark text-warm-light' : 'bg-warm-light text-warm-dark'}`}>
             Cargar Producto
           </button>
-          <button 
-            onClick={() => { setVista('gestionar'); setEditandoId(null); }} 
-            className={`flex-1 py-6 px-4 border-2 border-warm font-black uppercase text-xs sm:text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(74,59,50,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(74,59,50,1)] cursor-pointer ${vista === 'gestionar' ? 'bg-warm-dark text-warm-light' : 'bg-warm-light text-warm-dark'}`}
-          >
+          <button onClick={() => { setVista('gestionar'); setEditandoId(null); }} className={`flex-1 py-6 px-4 border-2 border-warm font-black uppercase text-xs sm:text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(74,59,50,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(74,59,50,1)] cursor-pointer ${vista === 'gestionar' ? 'bg-warm-dark text-warm-light' : 'bg-warm-light text-warm-dark'}`}>
             Gestionar Catálogo
           </button>
         </div>
@@ -361,62 +365,22 @@ export default function AdminPage() {
               <textarea className="w-full border-2 border-warm p-4 text-base font-bold text-warm-dark focus:outline-none bg-warm-light shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]" rows="2" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalles del producto..." />
             </div>
 
-            {/* SECCIÓN DE FOTOS UNIFICADA */}
             <div className="border-2 border-warm p-4 bg-warm-card shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]">
               <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 text-center">
                 Fotos del Producto <br/><span className="text-[10px] text-stone-600">(Seleccioná varias. Podés reordenarlas después)</span>
               </label>
-              <input 
-                ref={fileInputRef} 
-                type="file" 
-                multiple 
-                accept="image/*" 
-                className="w-full text-xs font-bold text-warm-dark file:mr-3 file:py-2 file:px-3 file:border-2 file:border-warm file:text-xs file:font-extrabold file:uppercase file:bg-warm-dark file:text-warm-light hover:file:bg-warm-light hover:file:text-warm-dark cursor-pointer transition-all mb-4" 
-                onChange={handleFileChange} 
-              />
+              <input ref={fileInputRef} type="file" multiple accept="image/*" className="w-full text-xs font-bold text-warm-dark file:mr-3 file:py-2 file:px-3 file:border-2 file:border-warm file:text-xs file:font-extrabold file:uppercase file:bg-warm-dark file:text-warm-light hover:file:bg-warm-light hover:file:text-warm-dark cursor-pointer transition-all mb-4" onChange={handleFileChange} />
 
-              {/* VISTA PREVIA Y REORDENAMIENTO */}
               {imagenesSeleccionadas.length > 0 && (
                 <div className="flex flex-wrap gap-4 border-t-2 border-warm pt-4 justify-center">
                   {imagenesSeleccionadas.map((file, index) => (
                     <div key={index} className="relative w-28 h-32 border-2 border-warm bg-warm-light p-1 flex flex-col items-center justify-between shadow-[2px_2px_0px_0px_rgba(74,59,50,1)]">
-                      
-                      {index === 0 && (
-                        <span className="absolute -top-3 -left-2 bg-warm-dark text-warm-light text-[9px] font-black uppercase px-2 py-1 border border-warm z-10">
-                          Portada
-                        </span>
-                      )}
-
-                      <img 
-                        src={URL.createObjectURL(file)} 
-                        alt={`Previa ${index}`} 
-                        className="w-full h-20 object-cover border border-warm"
-                      />
-
+                      {index === 0 && <span className="absolute -top-3 -left-2 bg-warm-dark text-warm-light text-[9px] font-black uppercase px-2 py-1 border border-warm z-10">Portada</span>}
+                      <img src={URL.createObjectURL(file)} alt={`Previa ${index}`} className="w-full h-20 object-cover border border-warm" />
                       <div className="flex justify-between items-center w-full gap-1 mt-1">
-                        <button
-                          type="button"
-                          onClick={() => moverImagen(index, -1)}
-                          disabled={index === 0}
-                          className={`flex-1 h-6 text-xs font-black border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}
-                        >
-                          ←
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => quitarImagen(index)}
-                          className="flex-1 h-6 text-xs font-black bg-red-600 text-white border border-red-900 hover:bg-red-800 flex items-center justify-center cursor-pointer"
-                        >
-                          ✕
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moverImagen(index, 1)}
-                          disabled={index === imagenesSeleccionadas.length - 1}
-                          className={`flex-1 h-6 text-xs font-black border border-warm flex items-center justify-center ${index === imagenesSeleccionadas.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}
-                        >
-                          →
-                        </button>
+                        <button type="button" onClick={() => moverImagen(index, -1)} disabled={index === 0} className={`flex-1 h-6 text-xs font-black border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>←</button>
+                        <button type="button" onClick={() => quitarImagen(index)} className="flex-1 h-6 text-xs font-black bg-red-600 text-white border border-red-900 hover:bg-red-800 flex items-center justify-center cursor-pointer">✕</button>
+                        <button type="button" onClick={() => moverImagen(index, 1)} disabled={index === imagenesSeleccionadas.length - 1} className={`flex-1 h-6 text-xs font-black border border-warm flex items-center justify-center ${index === imagenesSeleccionadas.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>→</button>
                       </div>
                     </div>
                   ))}
@@ -438,7 +402,7 @@ export default function AdminPage() {
             ) : productos.length === 0 ? (
               <p className="text-center font-bold py-12 text-stone-600 text-sm">No hay productos cargados todavía.</p>
             ) : (
-              <ul className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+              <ul className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                 {productos.map(prod => (
                   <li key={prod.id} className="p-4 border-2 border-warm bg-warm-light shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]">
                     
@@ -460,13 +424,36 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {/* NUEVO: Campo de Colores */}
                         <div>
                           <label className="text-[10px] font-bold uppercase">Colores (Separados por coma)</label>
                           <input type="text" placeholder="Ej: Blanco, Negro, Rojo" className="w-full border-2 border-warm p-2 text-sm font-bold bg-white" value={editColors} onChange={(e) => setEditColors(e.target.value)} />
                         </div>
+                        
+                        <div>
+                          <label className="text-[10px] font-bold uppercase">Descripción</label>
+                          <textarea className="w-full border-2 border-warm p-2 text-sm font-bold bg-white" rows="2" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+                        </div>
 
-                        <div className="flex gap-2 mt-1">
+                        {/* REORDENAMIENTO DE FOTOS EN EDICIÓN */}
+                        {editImages.length > 0 && (
+                          <div className="border-2 border-warm p-2 bg-warm-card mt-1">
+                            <label className="block text-[10px] font-bold uppercase mb-2">Orden de Fotos (La 1° será la portada)</label>
+                            <div className="flex flex-wrap gap-2">
+                              {editImages.map((imgUrl, index) => (
+                                <div key={index} className="relative w-16 h-20 border-2 border-warm bg-white p-1 flex flex-col items-center justify-between">
+                                  {index === 0 && <span className="absolute -top-2 -left-2 bg-warm-dark text-warm-light text-[8px] font-black uppercase px-1 py-0.5 border border-warm z-10">Portada</span>}
+                                  <img src={imgUrl} alt="preview" className="w-full h-12 object-cover border border-warm" />
+                                  <div className="flex w-full gap-0.5 mt-1">
+                                    <button type="button" onClick={() => moverImagenEdicion(index, -1)} disabled={index === 0} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>←</button>
+                                    <button type="button" onClick={() => moverImagenEdicion(index, 1)} disabled={index === editImages.length - 1} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === editImages.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>→</button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 mt-2">
                           <button onClick={() => handleActualizar(prod.id)} className="flex-1 bg-warm-dark text-warm-light font-bold text-xs py-2 border-2 border-warm hover:bg-white hover:text-warm-dark transition-all">Guardar</button>
                           <button onClick={() => setEditandoId(null)} className="flex-1 bg-red-100 text-red-800 font-bold text-xs py-2 border-2 border-red-800 hover:bg-red-800 hover:text-white transition-all">Cancelar</button>
                         </div>
@@ -484,20 +471,14 @@ export default function AdminPage() {
                             ${Number(prod.price).toLocaleString('es-AR')} <span className="text-stone-600 font-medium ml-2">Stock: {prod.stock}</span>
                           </p>
                           {prod.colors && prod.colors.length > 0 && (
-                            <p className="text-[10px] text-stone-600 font-bold mt-1">
-                              Colores: {prod.colors.join(', ')}
-                            </p>
+                            <p className="text-[10px] text-stone-600 font-bold mt-1">Colores: {prod.colors.join(', ')}</p>
                           )}
                         </div>
                         <div className="flex gap-2 w-full sm:w-auto">
                           <button onClick={() => iniciarEdicion(prod)} className="flex-1 sm:flex-none border-2 border-warm bg-warm-card hover:bg-warm-dark hover:text-warm-light text-warm-dark font-extrabold px-3 py-2 text-xs uppercase tracking-wider transition-all shadow-[2px_2px_0px_0px_rgba(74,59,50,1)] cursor-pointer">
                             Editar
                           </button>
-                          <button 
-                            type="button"
-                            onClick={() => handleEliminar(prod.id, prod.name)} 
-                            className="flex-1 sm:flex-none border-2 border-red-800 bg-red-50 hover:bg-red-800 hover:text-white text-red-800 font-extrabold px-3 py-2 text-xs uppercase tracking-wider transition-all shadow-[2px_2px_0px_0px_rgba(153,27,27,1)] cursor-pointer"
-                          >
+                          <button type="button" onClick={() => handleEliminar(prod.id, prod.name)} className="flex-1 sm:flex-none border-2 border-red-800 bg-red-50 hover:bg-red-800 hover:text-white text-red-800 font-extrabold px-3 py-2 text-xs uppercase tracking-wider transition-all shadow-[2px_2px_0px_0px_rgba(153,27,27,1)] cursor-pointer">
                             Borrar
                           </button>
                         </div>
