@@ -22,13 +22,13 @@ const MAPA_COLORES = {
   'plata': '#C0C0C0',
   'transparente': '#E3F2FD',
 
-  // 🐆 NUEVOS: ANIMAL PRINTS
-  'animal print normal': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #c3793a 3px, #e3c16f 5px)',
-  'animal print marrón': 'repeating-radial-gradient(circle at 50% 50%, #2b1704 0px, #2b1704 2px, #5c4033 3px, #8c6849 5px)',
-  'animal print marron': 'repeating-radial-gradient(circle at 50% 50%, #2b1704 0px, #2b1704 2px, #5c4033 3px, #8c6849 5px)',
-  'animal print amarillo': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #e66100 3px, #ffeb3b 5px)',
-  'animal print transparente': 'repeating-radial-gradient(circle at 50% 50%, #4a2c11 0px, #4a2c11 2px, #c3793a 3px, #e3f2fd 5px)',
-  'animal print azul': 'repeating-radial-gradient(circle at 50% 50%, #0d47a1 0px, #0d47a1 2px, #1976d2 3px, #90caf9 5px)'
+  // ANIMAL PRINTS
+  'print normal': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #c3793a 3px, #e3c16f 5px)',
+  'print marrón': 'repeating-radial-gradient(circle at 50% 50%, #2b1704 0px, #2b1704 2px, #5c4033 3px, #8c6849 5px)',
+  'print marron': 'repeating-radial-gradient(circle at 50% 50%, #2b1704 0px, #2b1704 2px, #5c4033 3px, #8c6849 5px)',
+  'print amarillo': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #e66100 3px, #ffeb3b 5px)',
+  'print transparente': 'repeating-radial-gradient(circle at 50% 50%, #4a2c11 0px, #4a2c11 2px, #c3793a 3px, #e3f2fd 5px)',
+  'print azul': 'repeating-radial-gradient(circle at 50% 50%, #0d47a1 0px, #0d47a1 2px, #1976d2 3px, #90caf9 5px)'
 }
 
 
@@ -352,7 +352,7 @@ export default function App() {
                             }`}
                           >
                             <span
-                              style={{ backgroundColor: hex }}
+                              style={{ background: hex }}
                               className={`w-full h-full rounded-full block ${
                                 colorName.toLowerCase() === 'blanco' ? 'border border-gray-300' : ''
                               }`}
