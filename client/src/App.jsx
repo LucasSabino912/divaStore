@@ -5,6 +5,7 @@ import { getProducts } from '../services/api'
 const MAPA_COLORES = {
   'negro': '#000000',
   'blanco': '#FFFFFF',
+  'crema' : '#FFFDD0',
   'gris': '#808080',
   'marrón': '#5C4033',
   'marron': '#5C4033',

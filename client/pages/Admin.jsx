@@ -24,22 +24,47 @@ export default function AdminPage() {
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
   const [colorsInput, setColorsInput] = useState('')
-  const [portadaFile, setPortadaFile] = useState(null)
-  const [galeriaFiles, setGaleriaFiles] = useState([])
+  
+  // Imágenes
+  const [imagenesSeleccionadas, setImagenesSeleccionadas] = useState([])
   const [cargando, setCargando] = useState(false)
   
-  const portadaInputRef = useRef(null)
-  const galeriaInputRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   const [productos, setProductos] = useState([])
   const [categoriasExistentes, setCategoriasExistentes] = useState([])
   const [cargandoLista, setCargandoLista] = useState(false)
 
-  // Estados para Editar
+  // Estados para Editar (NUEVO: editColors)
   const [editandoId, setEditandoId] = useState(null)
   const [editName, setEditName] = useState('')
   const [editPrice, setEditPrice] = useState('')
   const [editStock, setEditStock] = useState('')
+  const [editColors, setEditColors] = useState('')
+
+  // ------------------------------------------
+  // FUNCIONES PARA MANEJO DE IMÁGENES
+  // ------------------------------------------
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      const archivosNuevos = Array.from(e.target.files)
+      setImagenesSeleccionadas(prev => [...prev, ...archivosNuevos])
+    }
+  }
+
+  const quitarImagen = (indexAEliminar) => {
+    setImagenesSeleccionadas(prev => prev.filter((_, index) => index !== indexAEliminar))
+  }
+
+  const moverImagen = (index, direccion) => {
+    const nuevoOrden = [...imagenesSeleccionadas]
+    const nuevaPosicion = index + direccion
+    if (nuevaPosicion < 0 || nuevaPosicion >= nuevoOrden.length) return
+
+    const [imagenMovida] = nuevoOrden.splice(index, 1)
+    nuevoOrden.splice(nuevaPosicion, 0, imagenMovida)
+    setImagenesSeleccionadas(nuevoOrden)
+  }
 
   const convertImage = async (file) => {
     if (!file) return null;
@@ -68,12 +93,13 @@ export default function AdminPage() {
         });
       } catch (error) {
         console.error("Error al convertir HEIC:", error);
-        alert(`La imagen "${file.name}" no pudo ser convertida por el navegador debido a su codificación HEIC/HDR. Por favor, convertila a .jpg en tu compu antes de subirla.`);
+        alert(`La imagen "${file.name}" no pudo ser convertida. Convertila a .jpg en tu compu antes de subirla.`);
         throw new Error("Conversión cancelada.");
       }
     }
-    return file; // Si ya es JPG/PNG pasa directo
+    return file; 
   };
+
   useEffect(() => {
     const authStatus = sessionStorage.getItem('adminAutenticado')
     if (authStatus === 'true') {
@@ -116,21 +142,14 @@ export default function AdminPage() {
   }
 
   const handleEliminar = async (id, nombreProd) => {
-    if (!id) {
-      alert("Error: El producto no tiene un ID válido")
-      return
-    }
-
+    if (!id) return alert("Error: El producto no tiene un ID válido")
     try {
-      const res = await fetch(`${API_URL}/products/${id}`, { 
-        method: 'DELETE'
-      })
-
+      const res = await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' })
       if (res.ok || res.status === 204) {
         setProductos(prev => prev.filter(p => p.id !== id))
         alert('¡Producto eliminado correctamente!')
       } else {
-        alert(`Error al intentar eliminar en el servidor (Status: ${res.status})`)
+        alert(`Error al intentar eliminar (Status: ${res.status})`)
       }
     } catch (error) {
       console.error("Error en fetch eliminar:", error)
@@ -138,27 +157,35 @@ export default function AdminPage() {
     }
   }
 
+  // NUEVO: Agregamos el seteo de los colores cuando arranca la edición
   const iniciarEdicion = (prod) => {
     setEditandoId(prod.id)
     setEditName(prod.name)
     setEditPrice(prod.price)
     setEditStock(prod.stock)
+    setEditColors(prod.colors && prod.colors.length > 0 ? prod.colors.join(', ') : '')
   }
 
+  // NUEVO: Enviamos los colores actualizados al backend
   const handleActualizar = async (id) => {
     try {
+      const listaColoresActualizada = editColors ? editColors.split(',').map(c => c.trim()).filter(Boolean) : []
+
       const res = await fetch(`${API_URL}/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: editName,
           price: parseFloat(editPrice),
-          stock: parseInt(editStock) || 0
+          stock: parseInt(editStock) || 0,
+          colors: listaColoresActualizada
         })
       })
 
       if (res.ok) {
-        setProductos(productos.map(p => p.id === id ? { ...p, name: editName, price: editPrice, stock: editStock } : p))
+        setProductos(productos.map(p => 
+          p.id === id ? { ...p, name: editName, price: editPrice, stock: editStock, colors: listaColoresActualizada } : p
+        ))
         setEditandoId(null)
         alert('¡Actualizado con éxito!')
       } else {
@@ -172,40 +199,33 @@ export default function AdminPage() {
 
   const handleGuardar = async (e) => {
     e.preventDefault()
-    if (!name || !price || !category) return alert('Completá los campos obligatorios (Nombre, Precio, Categoría)')
+    if (!name || !price || !category) return alert('Completá los campos obligatorios')
+    if (imagenesSeleccionadas.length === 0) return alert('Por favor seleccioná al menos una foto de portada.')
     
     setCargando(true)
     try {
       let imgUrl = null
       let imgUrls = []
 
-      // 1. Subir Foto de Portada (Procesando HEIC si aplica)
-      if (portadaFile) {
-        const fileListo = await convertImage(portadaFile)
-        const safeFileName = fileListo.name.replace(/[^a-zA-Z0-9.]/g, '_')
-        const fileName = `portada-${Date.now()}-${safeFileName}`
-        const { error } = await supabase.storage.from('productos-fotos').upload(fileName, fileListo)
-        if (error) throw error
-        imgUrl = supabase.storage.from('productos-fotos').getPublicUrl(fileName).data.publicUrl
+      const portadaFile = imagenesSeleccionadas[0]
+      const fileListo = await convertImage(portadaFile)
+      const safeFileName = fileListo.name.replace(/[^a-zA-Z0-9.]/g, '_')
+      const fileName = `portada-${Date.now()}-${safeFileName}`
+      const { error } = await supabase.storage.from('productos-fotos').upload(fileName, fileListo)
+      if (error) throw error
+      imgUrl = supabase.storage.from('productos-fotos').getPublicUrl(fileName).data.publicUrl
+
+      for (let i = 1; i < imagenesSeleccionadas.length; i++) {
+        const fileGaleriaOriginal = imagenesSeleccionadas[i]
+        const fileGaleriaListo = await convertImage(fileGaleriaOriginal)
+        const safeGalFileName = fileGaleriaListo.name.replace(/[^a-zA-Z0-9.]/g, '_')
+        const galFileName = `galeria-${Date.now()}-${i}-${safeGalFileName}`
+        const galError = await supabase.storage.from('productos-fotos').upload(galFileName, fileGaleriaListo)
+        if (galError.error) throw galError.error
+        imgUrls.push(supabase.storage.from('productos-fotos').getPublicUrl(galFileName).data.publicUrl)
       }
 
-      // 2. Subir Galería de Fotos (Procesando HEIC para cada archivo)
-      if (galeriaFiles && galeriaFiles.length > 0) {
-        for (let i = 0; i < galeriaFiles.length; i++) {
-          const fileOriginal = galeriaFiles[i]
-          const fileListo = await convertImage(fileOriginal)
-          const safeFileName = fileListo.name.replace(/[^a-zA-Z0-9.]/g, '_')
-          const fileName = `galeria-${Date.now()}-${i}-${safeFileName}`
-          const { error } = await supabase.storage.from('productos-fotos').upload(fileName, fileListo)
-          if (error) throw error
-          imgUrls.push(supabase.storage.from('productos-fotos').getPublicUrl(fileName).data.publicUrl)
-        }
-      }
-
-      // Mapear colores de texto a Array
-      const listaColores = colorsInput
-        ? colorsInput.split(',').map(c => c.trim()).filter(Boolean)
-        : []
+      const listaColores = colorsInput ? colorsInput.split(',').map(c => c.trim()).filter(Boolean) : []
 
       const res = await fetch(`${API_URL}/products`, {
         method: 'POST',
@@ -216,18 +236,17 @@ export default function AdminPage() {
           price: parseFloat(price), 
           stock: parseInt(stock) || 0, 
           category, 
-          image_url: imgUrl,      // Portada principal
-          image_urls: imgUrls,    // Fotos adicionales
-          colors: listaColores    // Array de colores disponibles
+          image_url: imgUrl,      
+          image_urls: imgUrls,    
+          colors: listaColores    
         })
       })
 
       if (res.ok) {
         alert('¡Producto guardado con éxito! 🚀')
         setName(''); setPrice(''); setStock(''); setCategory(''); setDescription(''); setColorsInput('');
-        setPortadaFile(null); setGaleriaFiles([]);
-        if (portadaInputRef.current) portadaInputRef.current.value = ''
-        if (galeriaInputRef.current) galeriaInputRef.current.value = ''
+        setImagenesSeleccionadas([]);
+        if (fileInputRef.current) fileInputRef.current.value = ''
       } else {
         alert('Error al guardar en la base de datos')
       }
@@ -342,20 +361,71 @@ export default function AdminPage() {
               <textarea className="w-full border-2 border-warm p-4 text-base font-bold text-warm-dark focus:outline-none bg-warm-light shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]" rows="2" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalles del producto..." />
             </div>
 
-            {/* FOTO PORTADA */}
-            <div className="border-2 border-warm p-4 text-center bg-warm-card shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]">
-              <label className="block text-xs font-extrabold uppercase tracking-wider mb-2">Foto de Portada (Principal para Catálogo)</label>
-              <input ref={portadaInputRef} type="file" accept="image/*" className="w-full text-xs font-bold text-warm-dark file:mr-3 file:py-2 file:px-3 file:border-2 file:border-warm file:text-xs file:font-extrabold file:uppercase file:bg-warm-dark file:text-warm-light hover:file:bg-warm-light hover:file:text-warm-dark cursor-pointer transition-all" onChange={e => setPortadaFile(e.target.files?.[0] || null)} />
-            </div>
+            {/* SECCIÓN DE FOTOS UNIFICADA */}
+            <div className="border-2 border-warm p-4 bg-warm-card shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]">
+              <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 text-center">
+                Fotos del Producto <br/><span className="text-[10px] text-stone-600">(Seleccioná varias. Podés reordenarlas después)</span>
+              </label>
+              <input 
+                ref={fileInputRef} 
+                type="file" 
+                multiple 
+                accept="image/*" 
+                className="w-full text-xs font-bold text-warm-dark file:mr-3 file:py-2 file:px-3 file:border-2 file:border-warm file:text-xs file:font-extrabold file:uppercase file:bg-warm-dark file:text-warm-light hover:file:bg-warm-light hover:file:text-warm-dark cursor-pointer transition-all mb-4" 
+                onChange={handleFileChange} 
+              />
 
-            {/* GALERÍA */}
-            <div className="border-2 border-warm p-4 text-center bg-warm-card shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]">
-              <label className="block text-xs font-extrabold uppercase tracking-wider mb-2">Galería (Múltiples fotos adicionales para el modal)</label>
-              <input ref={galeriaInputRef} type="file" multiple accept="image/*" className="w-full text-xs font-bold text-warm-dark file:mr-3 file:py-2 file:px-3 file:border-2 file:border-warm file:text-xs file:font-extrabold file:uppercase file:bg-warm-dark file:text-warm-light hover:file:bg-warm-light hover:file:text-warm-dark cursor-pointer transition-all" onChange={e => setGaleriaFiles(e.target.files)} />
+              {/* VISTA PREVIA Y REORDENAMIENTO */}
+              {imagenesSeleccionadas.length > 0 && (
+                <div className="flex flex-wrap gap-4 border-t-2 border-warm pt-4 justify-center">
+                  {imagenesSeleccionadas.map((file, index) => (
+                    <div key={index} className="relative w-28 h-32 border-2 border-warm bg-warm-light p-1 flex flex-col items-center justify-between shadow-[2px_2px_0px_0px_rgba(74,59,50,1)]">
+                      
+                      {index === 0 && (
+                        <span className="absolute -top-3 -left-2 bg-warm-dark text-warm-light text-[9px] font-black uppercase px-2 py-1 border border-warm z-10">
+                          Portada
+                        </span>
+                      )}
+
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt={`Previa ${index}`} 
+                        className="w-full h-20 object-cover border border-warm"
+                      />
+
+                      <div className="flex justify-between items-center w-full gap-1 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => moverImagen(index, -1)}
+                          disabled={index === 0}
+                          className={`flex-1 h-6 text-xs font-black border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}
+                        >
+                          ←
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => quitarImagen(index)}
+                          className="flex-1 h-6 text-xs font-black bg-red-600 text-white border border-red-900 hover:bg-red-800 flex items-center justify-center cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moverImagen(index, 1)}
+                          disabled={index === imagenesSeleccionadas.length - 1}
+                          className={`flex-1 h-6 text-xs font-black border border-warm flex items-center justify-center ${index === imagenesSeleccionadas.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}
+                        >
+                          →
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button type="submit" disabled={cargando} className={`w-full py-5 mt-2 border-2 border-warm font-black uppercase tracking-wider text-warm-light text-base bg-warm-dark hover:bg-warm-light hover:text-warm-dark shadow-[4px_4px_0px_0px_rgba(74,59,50,1)] transition-all cursor-pointer ${cargando ? 'opacity-50 cursor-not-allowed' : ''}`}>
-              {cargando ? 'SUBIENDO...' : 'SUBIR PRODUCTO AL CATÁLOGO'}
+              {cargando ? 'SUBIENDO PRODUCTO...' : 'SUBIR PRODUCTO AL CATÁLOGO'}
             </button>
           </form>
         )}
@@ -389,6 +459,13 @@ export default function AdminPage() {
                             <input type="number" className="w-full border-2 border-warm p-2 text-sm font-bold bg-white" value={editStock} onChange={(e) => setEditStock(e.target.value)} />
                           </div>
                         </div>
+
+                        {/* NUEVO: Campo de Colores */}
+                        <div>
+                          <label className="text-[10px] font-bold uppercase">Colores (Separados por coma)</label>
+                          <input type="text" placeholder="Ej: Blanco, Negro, Rojo" className="w-full border-2 border-warm p-2 text-sm font-bold bg-white" value={editColors} onChange={(e) => setEditColors(e.target.value)} />
+                        </div>
+
                         <div className="flex gap-2 mt-1">
                           <button onClick={() => handleActualizar(prod.id)} className="flex-1 bg-warm-dark text-warm-light font-bold text-xs py-2 border-2 border-warm hover:bg-white hover:text-warm-dark transition-all">Guardar</button>
                           <button onClick={() => setEditandoId(null)} className="flex-1 bg-red-100 text-red-800 font-bold text-xs py-2 border-2 border-red-800 hover:bg-red-800 hover:text-white transition-all">Cancelar</button>
