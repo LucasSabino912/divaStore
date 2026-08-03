@@ -87,8 +87,9 @@ export default function App() {
 
     navigator.clipboard.writeText(mensaje)
       .then(() => {
-        alert("¡Pedido copiado al portapapeles! \n\nTe redirigimos a nuestro WhatsApp para que pegues el mensaje en el chat.")
-        window.open('https://wa.me/5493547544591', '_blank')
+        const textoCodificado = encodeURIComponent(mensaje);
+        window.open('https://wa.me/5493547544591?text=${textoCodificado}', '_blank')
+
       })
       .catch(() => alert("Hubo un error al copiar el texto, intentá de nuevo."))
   }
