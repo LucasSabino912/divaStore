@@ -24,6 +24,9 @@ const MAPA_COLORES = {
   'transparente': '#E3F2FD',
   'amarillo' : '#FFFF00',
   'violeta' : '#7F00FF',
+  'celeste': '#B2FFFF' ,
+  'verde marron': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #2E7D32 3px, #5C4033 5px)'
+  'nude': '#F2D2BD',
 
   // ANIMAL PRINTS
   'print normal': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #c3793a 3px, #e3c16f 5px)',
@@ -80,7 +83,8 @@ export default function App() {
     
     carrito.forEach(item => {
       mensaje += `▪️ 1x ${item.name} (Color: ${item.colorSeleccionado}) - $${Number(item.price).toLocaleString('es-AR')}\n`
-      total += item.price
+      total += item.price1801
+
     })
 
     mensaje += `\nTotal: $${total.toLocaleString('es-AR')}\n\n¿Me pasás los datos para abonar?`
