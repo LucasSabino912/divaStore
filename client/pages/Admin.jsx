@@ -43,7 +43,8 @@ export default function AdminPage() {
   const [editStock, setEditStock] = useState('')
   const [editColors, setEditColors] = useState('')
   const [editDescription, setEditDescription] = useState('')
-  const [editImages, setEditImages] = useState([]) // Fotos actuales en edición
+  const [editImages, setEditImages] = useState([]) // Fotos (URLs viejas y Archivos nuevos)
+  const [cargandoEdicion, setCargandoEdicion] = useState(false)
 
   // ------------------------------------------
   // FUNCIONES PARA MANEJO DE IMÁGENES (CARGA)
@@ -71,6 +72,13 @@ export default function AdminPage() {
   // ------------------------------------------
   // FUNCIONES PARA MANEJO DE IMÁGENES (EDICIÓN)
   // ------------------------------------------
+  const handleAgregarFotosEdicion = (e) => {
+    if (e.target.files) {
+      const archivosNuevos = Array.from(e.target.files)
+      setEditImages(prev => [...prev, ...archivosNuevos])
+    }
+  }
+
   const moverImagenEdicion = (index, direccion) => {
     const nuevoOrden = [...editImages]
     const nuevaPosicion = index + direccion
@@ -78,6 +86,10 @@ export default function AdminPage() {
     const [imagenMovida] = nuevoOrden.splice(index, 1)
     nuevoOrden.splice(nuevaPosicion, 0, imagenMovida)
     setEditImages(nuevoOrden)
+  }
+
+  const quitarImagenEdicion = (indexAEliminar) => {
+    setEditImages(prev => prev.filter((_, index) => index !== indexAEliminar))
   }
 
   const convertImage = async (file) => {
@@ -151,7 +163,6 @@ export default function AdminPage() {
     }
   }
 
-  // INICIAR EDICIÓN: Agrupa todas las fotos (portada + galería) para ordenarlas
   const iniciarEdicion = (prod) => {
     setEditandoId(prod.id)
     setEditName(prod.name)
@@ -166,11 +177,36 @@ export default function AdminPage() {
     setEditImages(fotosActuales)
   }
 
+  // ----------------------------------------------------
+  // ACTUALIZAR Y SUBIR NUEVAS FOTOS DESDE LA EDICIÓN
+  // ----------------------------------------------------
   const handleActualizar = async (id) => {
+    setCargandoEdicion(true)
     try {
+      const urlsFinales = []
+      
+      for (let i = 0; i < editImages.length; i++) {
+        const item = editImages[i]
+        
+        if (typeof item === 'string') {
+          urlsFinales.push(item) // Ya es una URL de supabase
+        } else {
+          // Es un archivo nuevo
+          const fileListo = await convertImage(item)
+          const safeFileName = fileListo.name.replace(/[^a-zA-Z0-9.]/g, '_')
+          const fileName = `edit-${Date.now()}-${i}-${safeFileName}`
+          
+          const { error } = await supabase.storage.from('productos-fotos').upload(fileName, fileListo)
+          if (error) throw error
+          
+          const publicUrl = supabase.storage.from('productos-fotos').getPublicUrl(fileName).data.publicUrl
+          urlsFinales.push(publicUrl)
+        }
+      }
+
       const listaColoresActualizada = editColors ? editColors.split(',').map(c => c.trim()).filter(Boolean) : []
-      const nuevaPortada = editImages.length > 0 ? editImages[0] : null
-      const nuevaGaleria = editImages.length > 1 ? editImages.slice(1) : []
+      const nuevaPortada = urlsFinales.length > 0 ? urlsFinales[0] : null
+      const nuevaGaleria = urlsFinales.length > 1 ? urlsFinales.slice(1) : []
 
       const res = await fetch(`${API_URL}/products/${id}`, {
         method: 'PUT',
@@ -206,7 +242,9 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error(error)
-      alert('Error de red al actualizar')
+      alert('Error crítico al actualizar')
+    } finally {
+      setCargandoEdicion(false)
     }
   }
 
@@ -365,6 +403,7 @@ export default function AdminPage() {
               <textarea className="w-full border-2 border-warm p-4 text-base font-bold text-warm-dark focus:outline-none bg-warm-light shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]" rows="2" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalles del producto..." />
             </div>
 
+            {/* SECCIÓN DE FOTOS CARGAR CON IMÁGENES CHIQUITAS */}
             <div className="border-2 border-warm p-4 bg-warm-card shadow-[3px_3px_0px_0px_rgba(74,59,50,1)]">
               <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 text-center">
                 Fotos del Producto <br/><span className="text-[10px] text-stone-600">(Seleccioná varias. Podés reordenarlas después)</span>
@@ -372,15 +411,15 @@ export default function AdminPage() {
               <input ref={fileInputRef} type="file" multiple accept="image/*" className="w-full text-xs font-bold text-warm-dark file:mr-3 file:py-2 file:px-3 file:border-2 file:border-warm file:text-xs file:font-extrabold file:uppercase file:bg-warm-dark file:text-warm-light hover:file:bg-warm-light hover:file:text-warm-dark cursor-pointer transition-all mb-4" onChange={handleFileChange} />
 
               {imagenesSeleccionadas.length > 0 && (
-                <div className="flex flex-wrap gap-4 border-t-2 border-warm pt-4 justify-center">
+                <div className="flex flex-wrap gap-2 border-t-2 border-warm pt-4 justify-center">
                   {imagenesSeleccionadas.map((file, index) => (
-                    <div key={index} className="relative w-28 h-32 border-2 border-warm bg-warm-light p-1 flex flex-col items-center justify-between shadow-[2px_2px_0px_0px_rgba(74,59,50,1)]">
-                      {index === 0 && <span className="absolute -top-3 -left-2 bg-warm-dark text-warm-light text-[9px] font-black uppercase px-2 py-1 border border-warm z-10">Portada</span>}
-                      <img src={URL.createObjectURL(file)} alt={`Previa ${index}`} className="w-full h-20 object-cover border border-warm" />
-                      <div className="flex justify-between items-center w-full gap-1 mt-1">
-                        <button type="button" onClick={() => moverImagen(index, -1)} disabled={index === 0} className={`flex-1 h-6 text-xs font-black border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>←</button>
-                        <button type="button" onClick={() => quitarImagen(index)} className="flex-1 h-6 text-xs font-black bg-red-600 text-white border border-red-900 hover:bg-red-800 flex items-center justify-center cursor-pointer">✕</button>
-                        <button type="button" onClick={() => moverImagen(index, 1)} disabled={index === imagenesSeleccionadas.length - 1} className={`flex-1 h-6 text-xs font-black border border-warm flex items-center justify-center ${index === imagenesSeleccionadas.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>→</button>
+                    <div key={index} className="relative w-16 h-20 border-2 border-warm bg-white p-1 flex flex-col items-center justify-between shadow-[2px_2px_0px_0px_rgba(74,59,50,0.5)]">
+                      {index === 0 && <span className="absolute -top-2 -left-2 bg-warm-dark text-warm-light text-[8px] font-black uppercase px-1 py-0.5 border border-warm z-10">Portada</span>}
+                      <img src={URL.createObjectURL(file)} alt={`Previa ${index}`} className="w-full h-12 object-cover border border-warm" />
+                      <div className="flex w-full gap-0.5 mt-1">
+                        <button type="button" onClick={() => moverImagen(index, -1)} disabled={index === 0} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>←</button>
+                        <button type="button" onClick={() => quitarImagen(index)} className="flex-1 h-4 text-[8px] font-black bg-red-600 text-white border border-red-900 hover:bg-red-800 flex items-center justify-center cursor-pointer">✕</button>
+                        <button type="button" onClick={() => moverImagen(index, 1)} disabled={index === imagenesSeleccionadas.length - 1} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === imagenesSeleccionadas.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>→</button>
                       </div>
                     </div>
                   ))}
@@ -434,28 +473,47 @@ export default function AdminPage() {
                           <textarea className="w-full border-2 border-warm p-2 text-sm font-bold bg-white" rows="2" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
                         </div>
 
-                        {/* REORDENAMIENTO DE FOTOS EN EDICIÓN */}
-                        {editImages.length > 0 && (
-                          <div className="border-2 border-warm p-2 bg-warm-card mt-1">
-                            <label className="block text-[10px] font-bold uppercase mb-2">Orden de Fotos (La 1° será la portada)</label>
-                            <div className="flex flex-wrap gap-2">
-                              {editImages.map((imgUrl, index) => (
-                                <div key={index} className="relative w-16 h-20 border-2 border-warm bg-white p-1 flex flex-col items-center justify-between">
-                                  {index === 0 && <span className="absolute -top-2 -left-2 bg-warm-dark text-warm-light text-[8px] font-black uppercase px-1 py-0.5 border border-warm z-10">Portada</span>}
-                                  <img src={imgUrl} alt="preview" className="w-full h-12 object-cover border border-warm" />
-                                  <div className="flex w-full gap-0.5 mt-1">
-                                    <button type="button" onClick={() => moverImagenEdicion(index, -1)} disabled={index === 0} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>←</button>
-                                    <button type="button" onClick={() => moverImagenEdicion(index, 1)} disabled={index === editImages.length - 1} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === editImages.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>→</button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                        {/* REORDENAMIENTO Y AGREGADO DE FOTOS EN EDICIÓN */}
+                        <div className="border-2 border-warm p-2 bg-warm-card mt-1">
+                          <div className="mb-3 border-b border-warm pb-2">
+                            <label className="block text-[10px] font-bold uppercase mb-1">Agregar más fotos al producto</label>
+                            <input type="file" multiple accept="image/*" onChange={handleAgregarFotosEdicion} className="w-full text-[10px] font-bold text-warm-dark file:mr-2 file:py-1 file:px-2 file:border-2 file:border-warm file:text-[10px] file:font-extrabold file:uppercase file:bg-warm-dark file:text-warm-light hover:file:bg-warm-light hover:file:text-warm-dark cursor-pointer transition-all" />
                           </div>
-                        )}
+                          
+                          {editImages.length > 0 ? (
+                            <>
+                              <label className="block text-[10px] font-bold uppercase mb-2">Organizar Fotos (La 1° será la portada)</label>
+                              <div className="flex flex-wrap gap-2">
+                                {editImages.map((img, index) => {
+                                  // Determina si es una URL o un File nuevo para mostrarlo bien
+                                  const imgURLPreview = typeof img === 'string' ? img : URL.createObjectURL(img)
+                                  
+                                  return (
+                                    <div key={index} className="relative w-16 h-20 border-2 border-warm bg-white p-1 flex flex-col items-center justify-between shadow-[2px_2px_0px_0px_rgba(74,59,50,0.5)]">
+                                      {index === 0 && <span className="absolute -top-2 -left-2 bg-warm-dark text-warm-light text-[8px] font-black uppercase px-1 py-0.5 border border-warm z-10">Portada</span>}
+                                      <img src={imgURLPreview} alt="preview" className="w-full h-12 object-cover border border-warm" />
+                                      <div className="flex w-full gap-0.5 mt-1">
+                                        <button type="button" onClick={() => moverImagenEdicion(index, -1)} disabled={index === 0} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>←</button>
+                                        <button type="button" onClick={() => quitarImagenEdicion(index)} className="flex-1 h-4 text-[8px] font-black border border-warm bg-warm-light text-warm-dark hover:bg-warm-dark hover:text-warm-light flex items-center justify-center cursor-pointer">✕</button>
+                                        <button type="button" onClick={() => moverImagenEdicion(index, 1)} disabled={index === editImages.length - 1} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === editImages.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>→</button>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-xs text-stone-500 font-bold">Sin fotos.</p>
+                          )}
+                        </div>
 
                         <div className="flex gap-2 mt-2">
-                          <button onClick={() => handleActualizar(prod.id)} className="flex-1 bg-warm-dark text-warm-light font-bold text-xs py-2 border-2 border-warm hover:bg-white hover:text-warm-dark transition-all">Guardar</button>
-                          <button onClick={() => setEditandoId(null)} className="flex-1 bg-red-100 text-red-800 font-bold text-xs py-2 border-2 border-red-800 hover:bg-red-800 hover:text-white transition-all">Cancelar</button>
+                          <button onClick={() => handleActualizar(prod.id)} disabled={cargandoEdicion} className={`flex-1 bg-warm-dark text-warm-light font-bold text-xs py-2 border-2 border-warm hover:bg-white hover:text-warm-dark transition-all ${cargandoEdicion ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                            {cargandoEdicion ? 'GUARDANDO...' : 'Guardar Cambios'}
+                          </button>
+                          <button onClick={() => setEditandoId(null)} disabled={cargandoEdicion} className={`flex-1 bg-red-100 text-red-800 font-bold text-xs py-2 border-2 border-red-800 hover:bg-red-800 hover:text-white transition-all ${cargandoEdicion ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                            Cancelar
+                          </button>
                         </div>
                       </div>
                     ) : (

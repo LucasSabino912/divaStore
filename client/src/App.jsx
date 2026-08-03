@@ -22,7 +22,8 @@ const MAPA_COLORES = {
   'plateado': '#C0C0C0',
   'plata': '#C0C0C0',
   'transparente': '#E3F2FD',
-  'amarillo': '#FFFF00',
+  'amarillo' : '#FFFF00',
+  'violeta' : '#7F00FF',
 
   // ANIMAL PRINTS
   'print normal': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #c3793a 3px, #e3c16f 5px)',
@@ -86,8 +87,8 @@ export default function App() {
 
     navigator.clipboard.writeText(mensaje)
       .then(() => {
-        alert("¡Pedido copiado al portapapeles! \n\nTe redirigimos a nuestro Instagram para que pegues el mensaje en el chat.")
-        window.open('https://www.instagram.com/diva_store_ag/', '_blank')
+        alert("¡Pedido copiado al portapapeles! \n\nTe redirigimos a nuestro WhatsApp para que pegues el mensaje en el chat.")
+        window.open('https://wa.me/5493547544591', '_blank')
       })
       .catch(() => alert("Hubo un error al copiar el texto, intentá de nuevo."))
   }
@@ -455,7 +456,7 @@ export default function App() {
               onClick={generarPedido}
               className="w-full py-4 bg-black text-white border-2 border-black font-black uppercase tracking-wider text-sm hover:bg-white hover:text-black hover:translate-x-[-2px] hover:translate-y-[-2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
             >
-              Enviar Pedido a Instagram
+              Enviar Pedido a WhatsApp
             </button>
           </div>
         )}
