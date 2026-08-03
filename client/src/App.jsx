@@ -27,6 +27,9 @@ const MAPA_COLORES = {
   'celeste': '#B2FFFF',
   'verde marron': 'linear-gradient(90deg, #2E7D32 50%, #5C4033 50%)',
   'verde marrón': 'linear-gradient(90deg, #2E7D32 50%, #5C4033 50%)',
+  'dorado negro': 'linear-gradient(90deg, #EFBF04 50%, #000000 50%)',
+  'dorado marron': 'linear-gradient(90deg, #EFBF04 50%, #5C4033 50%)',
+  'dorado marrón': 'linear-gradient(90deg, #EFBF04 50%, #5C4033 50%)',
   'nude': '#F2D2BD',
 
   // ANIMAL PRINTS
