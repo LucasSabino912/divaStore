@@ -22,6 +22,7 @@ const MAPA_COLORES = {
   'plateado': '#C0C0C0',
   'plata': '#C0C0C0',
   'transparente': '#E3F2FD',
+  'amarillo': '#FFFF00',
 
   // ANIMAL PRINTS
   'print normal': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #c3793a 3px, #e3c16f 5px)',
