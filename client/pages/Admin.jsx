@@ -418,7 +418,7 @@ export default function AdminPage() {
                       <img src={URL.createObjectURL(file)} alt={`Previa ${index}`} className="w-full h-12 object-cover border border-warm" />
                       <div className="flex w-full gap-0.5 mt-1">
                         <button type="button" onClick={() => moverImagen(index, -1)} disabled={index === 0} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>←</button>
-                        <button type="button" onClick={() => quitarImagen(index)} className="flex-1 h-4 text-[8px] font-black bg-red-600 text-white border border-red-900 hover:bg-red-800 flex items-center justify-center cursor-pointer">✕</button>
+                        <button type="button" onClick={() => quitarImagen(index)} className="flex-1 h-4 text-[8px] font-black border border-warm bg-warm-light text-warm-dark hover:bg-warm-dark hover:text-warm-light flex items-center justify-center cursor-pointer">✕</button>
                         <button type="button" onClick={() => moverImagen(index, 1)} disabled={index === imagenesSeleccionadas.length - 1} className={`flex-1 h-4 text-[8px] border border-warm flex items-center justify-center ${index === imagenesSeleccionadas.length - 1 ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-warm-light hover:bg-warm-dark hover:text-warm-light cursor-pointer'}`}>→</button>
                       </div>
                     </div>
