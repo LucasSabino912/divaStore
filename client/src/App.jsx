@@ -88,7 +88,7 @@ export default function App() {
     navigator.clipboard.writeText(mensaje)
       .then(() => {
         const textoCodificado = encodeURIComponent(mensaje);
-        window.open('https://wa.me/5493547544591?text=${textoCodificado}', '_blank')
+        window.open(`https://wa.me/5493547544591?text=${textoCodificado}`, '_blank')
 
       })
       .catch(() => alert("Hubo un error al copiar el texto, intentá de nuevo."))
