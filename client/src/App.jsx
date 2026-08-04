@@ -31,6 +31,10 @@ const MAPA_COLORES = {
   'dorado marron': 'linear-gradient(90deg, #EFBF04 50%, #5C4033 50%)',
   'dorado marrón': 'linear-gradient(90deg, #EFBF04 50%, #5C4033 50%)',
   'nude': '#F2D2BD',
+  'fucsia': 'FF00FF',
+  'naranja celeste': 'linear-gradient(90deg, #E66100 50%, #B2FFFF 50%)',
+  'negro naranja': 'linear-gradient(90deg, #000000 50%, #E66100 50%)',
+  'naranja negro': 'linear-gradient(90deg, #E66100 50%, #000000 50%)',
 
   // ANIMAL PRINTS
   'print normal': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #c3793a 3px, #e3c16f 5px)',
@@ -185,8 +189,7 @@ export default function App() {
         </div>
 
         {/* 2. CAPA SUPERIOR DEL CATÁLOGO QUE SUBE Y TAPA LA PORTADA */}
-        <div className="relative z-10 bg-white pt-4 border-t-2 border-black">
-          
+        <div className="relative z-30 w-full min-h-screen bg-white pt-4 border-t-2 border-black">          
           {/* BARRA DE FILTROS */}
           <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-10 pb-6 border-b-2 border-black bg-white">
             <div className="flex overflow-x-auto gap-2 pb-2 md:pb-0 no-scrollbar">
