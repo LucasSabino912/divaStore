@@ -36,6 +36,7 @@ const MAPA_COLORES = {
   'naranja celeste': 'linear-gradient(90deg, #E66100 50%, #B2FFFF 50%)',
   'negro naranja': 'linear-gradient(90deg, #000000 50%, #E66100 50%)',
   'naranja negro': 'linear-gradient(90deg, #E66100 50%, #000000 50%)',
+  'gris violeta': 'linear-gradient(90deg, #808080 50%, #7F00FF 50%)',
   'violeta azulado': '#8A2BE2',
 
   // ANIMAL PRINTS
