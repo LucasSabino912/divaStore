@@ -35,6 +35,7 @@ const MAPA_COLORES = {
   'naranja celeste': 'linear-gradient(90deg, #E66100 50%, #B2FFFF 50%)',
   'negro naranja': 'linear-gradient(90deg, #000000 50%, #E66100 50%)',
   'naranja negro': 'linear-gradient(90deg, #E66100 50%, #000000 50%)',
+  'violeta azulado': '#8A2BE2',
 
   // ANIMAL PRINTS
   'print normal': 'repeating-radial-gradient(circle at 50% 50%, #000 0px, #000 2px, #c3793a 3px, #e3c16f 5px)',
@@ -175,7 +176,7 @@ export default function App() {
       {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-        <div className="sticky top-16 sm:top-20 z-0 mb-6 w-full h-72 sm:h-96 md:h-[450px] border-2 border-black overflow-hidden bg-stone-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="sticky top-16 sm:top-20 z-0 mb-6 w-full h-72 sm:h-96 md:h-[450px] border-2 border-black overflow-hidden bg-stone-100">
           <img 
             src="/portada2.jpg" 
             alt="Diva Store Portada" 
