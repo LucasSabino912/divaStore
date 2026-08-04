@@ -32,6 +32,7 @@ const MAPA_COLORES = {
   'dorado marrón': 'linear-gradient(90deg, #EFBF04 50%, #5C4033 50%)',
   'nude': '#F2D2BD',
   'fucsia': 'FF00FF',
+  'transparente celeste': 'linear-gradient(90deg, #E3F2FD 50%, #B2FFFF 50%)',
   'naranja celeste': 'linear-gradient(90deg, #E66100 50%, #B2FFFF 50%)',
   'negro naranja': 'linear-gradient(90deg, #000000 50%, #E66100 50%)',
   'naranja negro': 'linear-gradient(90deg, #E66100 50%, #000000 50%)',
