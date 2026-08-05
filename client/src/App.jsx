@@ -33,6 +33,11 @@ const MAPA_COLORES = {
   'lila': '#D29BFD',
   'coral': '#F88379',
   'amarillo fuerte': '#FFFF00',
+  'bordó': '#660033',
+  'bordo': '#660033',
+  'verde militar': '#5D6532',
+  'verde oscuro': '#006400',
+  'beige': '#EDE8D0',
 
   // GRADIENTES
   'verde marron': 'linear-gradient(90deg, #2E7D32 50%, #5C4033 50%)',
