@@ -93,9 +93,13 @@ export default function App() {
     let mensaje = `¡Hola! Quiero hacer un pedido en Diva Store ✨\n\n`
     
     carrito.forEach(item => {
-      mensaje += `▪️ 1x ${item.name} (Color: ${item.colorSeleccionado}) - $${Number(item.price).toLocaleString('es-AR')}\n`
-      total += item.price1801
-
+      // 1. Convertimos el precio a número de forma segura
+      const precioNumerico = Number(item.price) || 0
+      
+      mensaje += `▪️ 1x ${item.name} (Color: ${item.colorSeleccionado}) - $${precioNumerico.toLocaleString('es-AR')}\n`
+      
+      // 2. Sumamos usando la variable limpia
+      total += precioNumerico
     })
 
     mensaje += `\nTotal: $${total.toLocaleString('es-AR')}\n\n¿Me pasás los datos para abonar?`
@@ -104,7 +108,6 @@ export default function App() {
       .then(() => {
         const textoCodificado = encodeURIComponent(mensaje);
         window.open(`https://wa.me/5493547544591?text=${textoCodificado}`, '_blank')
-
       })
       .catch(() => alert("Hubo un error al copiar el texto, intentá de nuevo."))
   }
@@ -464,7 +467,7 @@ export default function App() {
           <div className="p-5 border-t-4 border-black bg-white">
             <div className="flex justify-between items-end mb-4">
               <span className="font-bold uppercase tracking-wider text-sm">Total:</span>
-              <span className="font-black text-2xl">${carrito.reduce((acc, curr) => acc + curr.price, 0).toLocaleString('es-AR')}</span>
+              <span className="font-black text-2xl">${carrito.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0)).toLocaleString('es-AR')}</span>
             </div>
             
             <button 
