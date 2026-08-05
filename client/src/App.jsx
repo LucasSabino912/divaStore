@@ -74,6 +74,7 @@ export default function App() {
     
     const nuevoItem = {
       ...product,
+      price: Number(product.price) || 0,
       colorSeleccionado: colorFinal,
       cartId: Date.now() + Math.random()
     }
@@ -93,12 +94,12 @@ export default function App() {
     let mensaje = `¡Hola! Quiero hacer un pedido en Diva Store ✨\n\n`
     
     carrito.forEach(item => {
-      // 1. Convertimos el precio a número de forma segura
+      // 1. Limpiamos el precio asegurando que sea un número
       const precioNumerico = Number(item.price) || 0
       
       mensaje += `▪️ 1x ${item.name} (Color: ${item.colorSeleccionado}) - $${precioNumerico.toLocaleString('es-AR')}\n`
       
-      // 2. Sumamos usando la variable limpia
+      // 2. Sumamos directamente el número limpio
       total += precioNumerico
     })
 
@@ -111,6 +112,7 @@ export default function App() {
       })
       .catch(() => alert("Hubo un error al copiar el texto, intentá de nuevo."))
   }
+
 
   useEffect(() => {
     async function fetchData() {
