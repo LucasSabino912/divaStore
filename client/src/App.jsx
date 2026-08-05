@@ -467,7 +467,7 @@ export default function App() {
           <div className="p-5 border-t-4 border-black bg-white">
             <div className="flex justify-between items-end mb-4">
               <span className="font-bold uppercase tracking-wider text-sm">Total:</span>
-              <span className="font-black text-2xl">${carrito.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0)).toLocaleString('es-AR')}</span>
+              <span className="font-black text-2xl">${(carrito.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0)).toLocaleString('es-AR')}</span>
             </div>
             
             <button 
