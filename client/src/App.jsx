@@ -27,9 +27,9 @@ const MAPA_COLORES = {
   'celeste': '#B2FFFF',
   'negro mate':'#171717',
   'nude': '#F2D2BD',
-  'fucsia': 'FF00FF',
+  'fucsia': '#FF00FF',
   'violeta azulado': '#8A2BE2',
-  
+
   // GRADIENTES
   'verde marron': 'linear-gradient(90deg, #2E7D32 50%, #5C4033 50%)',
   'verde marrón': 'linear-gradient(90deg, #2E7D32 50%, #5C4033 50%)',
